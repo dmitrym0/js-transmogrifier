@@ -3,23 +3,29 @@
 "use strict";
 
 
-var spellcheck = require('node-aspell-spellchecker');
+var dictionary = require('./dictionary');
+var processedMap = {};
+var results = [];
+var originalStartWord;
 
 //http://stackoverflow.com/a/1431113/38753
 String.prototype.replaceAt=function(index, character) {
-      return this.substr(0, index) + character + this.substr(index+character.length);
+    return this.substr(0, index) + character + this.substr(index+character.length);
 }
 
 
 exports.transmogrify = function(startWord, endWord) {
-    for (var i = 0; i < startWord.length; ++i) {
-        var result = exports.transmogrifyRecursive(startWord, endWord, i,0);
-        if (result.code === 1) {
-            console.log(" ***** ", result.wordlist);
-            return result;
-        }
+    console.log("From " + startWord + " to " + endWord);
+    originalStartWord = startWord;
+    processedMap[startWord] = true;
+
+    var result = exports.transmogrifyRecursive(startWord, endWord, 0,0);
+    console.log(result);
+    console.log("There are a total of " + result.length + " transformations possible.");
+    for(var i = 0; i < result.length; ++i) {
+        console.log("Chain=" + result[i].wordlist.length);
     }
-    return undefined;
+
 }
 
 exports.transmogrifyRecursive = function(currentWord, endWord, currentCharacterInWord, currentCharacterInAlphabet) {
@@ -40,26 +46,41 @@ exports.transmogrifyRecursive = function(currentWord, endWord, currentCharacterI
         throw "currentCharacterInAlphabet is out of bounds."
     }
 
-
+    processedMap[currentWord] = true;
 
     // otherwise generate new data
-    for(var i = 0; i < 3; ++i) {
-        var newWord = exports.letterShifter(currentWord, currentCharacterInWord, i);
-        console.log("Trying new word \"" + newWord + "\", current character is " + currentCharacterInWord);
-        if (exports.isValidWord(newWord) && newWord != currentWord) {
-            var newCurrentCharacter = Number(currentCharacterInWord) + 1;
-            console.log("Proceeding with " + newWord + " " + newCurrentCharacter);
-            var result = exports.transmogrifyRecursive(newWord, endWord, newCurrentCharacter, 0);
-            if (result.code === 1) {
-                console.log("Found word ="+ newWord + " " + result.word);
-                result.wordlist.push(currentWord);
-                return result;
+    for(var j = 0; j < currentWord.length; ++j) {
+        for(var i = 0; i < 26; ++i) {
+            var newWord = exports.letterShifter(currentWord, j, i);
+
+            var validWord = exports.isValidWord(newWord);
+
+
+            if (validWord && newWord != currentWord && !processedMap[newWord]) {
+                var newCurrentCharacter = Number(currentCharacterInWord) + 1;
+                var tabstop = "";
+                for (var k = 0; k < newCurrentCharacter; ++k) {
+                    tabstop = tabstop + "\t";
+                }
+                //console.log(tabstop + "Proceeding with " + newWord + " " + newCurrentCharacter);
+                var result = exports.transmogrifyRecursive(newWord, endWord, 0, 0);
+                if (result.code === 1) {
+                    //console.log("Found word ="+ newWord + " " + result.word);
+                    result.wordlist.push(currentWord);
+                    if (currentWord === originalStartWord){
+                        results.push(result);
+                    } else {
+                        return result;
+                    }
+
+                }
             }
         }
     }
 
 
-    return {"code": -1, "message": "Couldn't find transformation for given data"};
+    return results;
+    //return {"code": -1, "message": "Couldn't find transformation for given data"};
 
 }
 
@@ -72,7 +93,8 @@ exports.letterShifter = function(word, charInWord, charInAlphabet) {
 }
 
 var dumbIsValid = function(word) {
-    var validWords = ["abc", "acc", "acb"];
+    //var validWords = ["abc", "acc", "acb"];
+    var validWords = dictionary.dictionary;
     for (var i = 0; i < validWords.length; ++i) {
         if (validWords[i] === word) {
             return true;
@@ -90,12 +112,20 @@ var aSpellIsValid = function(word, callback) {
     req.body.text = [word];
 
 
+    var outsideResult = undefined;
+
     spellcheck(req, function(result){
-        var result =  ((result.outcome == 'success') && result.data[0].length == 0);
-        if (callback)
-            callback(result);
+        console.log("call back");
+        outsideResult =  ((result.outcome == 'success') && result.data[0].length == 0);
     });
-    return false;
+
+    while(outsideResult === undefined) {
+        var i = 0;
+        setTimeout(function() {i++}, 100);
+    }
+
+    return outsideResult;
 }
 
-exports.isValidWord =  aSpellIsValid;
+//exports.isValidWord =  aSpellIsValid;
+exports.isValidWord = dumbIsValid;
