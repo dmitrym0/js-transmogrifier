@@ -104,28 +104,4 @@ var dumbIsValid = function(word) {
     return false;
 }
 
-var aSpellIsValid = function(word, callback) {
-    console.log("Checking " + word);
-    var req = {};
-    req.body = {};
-    req.body.action = "get_incorrect_words";
-    req.body.text = [word];
-
-
-    var outsideResult = undefined;
-
-    spellcheck(req, function(result){
-        console.log("call back");
-        outsideResult =  ((result.outcome == 'success') && result.data[0].length == 0);
-    });
-
-    while(outsideResult === undefined) {
-        var i = 0;
-        setTimeout(function() {i++}, 100);
-    }
-
-    return outsideResult;
-}
-
-//exports.isValidWord =  aSpellIsValid;
 exports.isValidWord = dumbIsValid;
