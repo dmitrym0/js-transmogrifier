@@ -2,6 +2,9 @@
 
 "use strict";
 
+
+var spellcheck = require('node-aspell-spellchecker');
+
 //http://stackoverflow.com/a/1431113/38753
 String.prototype.replaceAt=function(index, character) {
       return this.substr(0, index) + character + this.substr(index+character.length);
@@ -68,8 +71,7 @@ exports.letterShifter = function(word, charInWord, charInAlphabet) {
 
 }
 
-
-exports.isValidWord = function(word) {
+var dumbIsValid = function(word) {
     var validWords = ["abc", "acc", "acb"];
     for (var i = 0; i < validWords.length; ++i) {
         if (validWords[i] === word) {
@@ -79,3 +81,21 @@ exports.isValidWord = function(word) {
 
     return false;
 }
+
+var aSpellIsValid = function(word, callback) {
+    console.log("Checking " + word);
+    var req = {};
+    req.body = {};
+    req.body.action = "get_incorrect_words";
+    req.body.text = [word];
+
+
+    spellcheck(req, function(result){
+        var result =  ((result.outcome == 'success') && result.data[0].length == 0);
+        if (callback)
+            callback(result);
+    });
+    return false;
+}
+
+exports.isValidWord =  aSpellIsValid;
