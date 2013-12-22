@@ -49,8 +49,24 @@ describe("letterShifter", function() {
         var result = transmogrifier.letterShifter("word", 3, 25);
         expect(result).toBe("worz");
     });
+});
 
+describe("word checker", function() {
+    it("should find abc as a valid word", function(){
+        var result = transmogrifier.isValidWord("abc");
+        expect(result).toBe(true);
+    });
 
+    it("should find abd as an invalid word", function(){
+        var result = transmogrifier.isValidWord("abd");
+        expect(result).toBe(false);
+    });
 
+});
+
+describe("transmogrify top level", function() {
+    it("should mogrify simple stuff", function(){
+        transmogrifier.transmogrify("abc", "acb");
+    });
 });
 

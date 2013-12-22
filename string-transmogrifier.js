@@ -9,10 +9,25 @@ String.prototype.replaceAt=function(index, character) {
 
 
 exports.transmogrify = function(startWord, endWord) {
-
+    for (var i = 0; i < startWord.length; ++i) {
+        var result = exports.transmogrifyRecursive(startWord, endWord, i,0);
+        if (result.code === 1) {
+            console.log(" ***** ", result.wordlist);
+            return result;
+        }
+    }
+    return undefined;
 }
 
 exports.transmogrifyRecursive = function(currentWord, endWord, currentCharacterInWord, currentCharacterInAlphabet) {
+    // we found the transmutation we were looking for.
+    if (currentWord === endWord)
+        return {"code": 1, "message": "Found a transformation!", "word" : currentWord, "wordlist" : [currentWord]};
+
+    // check for the recursive base case. either we ran out of things to try...
+    else if (currentCharacterInWord === currentWord.length)
+        return {"code": -1, "message": "Couldn't find transformation for given data"};
+    
     // check for errors.
     if (currentCharacterInWord > currentWord.length) {
         throw "currentCharacterInWord is out of bounds.";
@@ -22,14 +37,27 @@ exports.transmogrifyRecursive = function(currentWord, endWord, currentCharacterI
         throw "currentCharacterInAlphabet is out of bounds."
     }
 
-    // check for the recursive base case. either we ran out of things to try...
-    if (currentCharacterInWord == currentWord.length && currentCharacterInAlphabet == 25)
-        return {"code": -1, "message": "Couldn't find transformation for given data"};
-    // ...or we found the transmutation we were looking for.
-    else if (currentWord === endWord)
-        return {"code": 1, "message": "Found a transformation!", "word" : currentWord};
+
 
     // otherwise generate new data
+    for(var i = 0; i < 3; ++i) {
+        var newWord = exports.letterShifter(currentWord, currentCharacterInWord, i);
+        console.log("Trying new word \"" + newWord + "\", current character is " + currentCharacterInWord);
+        if (exports.isValidWord(newWord) && newWord != currentWord) {
+            var newCurrentCharacter = Number(currentCharacterInWord) + 1;
+            console.log("Proceeding with " + newWord + " " + newCurrentCharacter);
+            var result = exports.transmogrifyRecursive(newWord, endWord, newCurrentCharacter, 0);
+            if (result.code === 1) {
+                console.log("Found word ="+ newWord + " " + result.word);
+                result.wordlist.push(currentWord);
+                return result;
+            }
+        }
+    }
+
+
+    return {"code": -1, "message": "Couldn't find transformation for given data"};
+
 }
 
 // assume all lower case, a-z, 97-122 inclusive.
@@ -38,4 +66,16 @@ exports.letterShifter = function(word, charInWord, charInAlphabet) {
     var newWord = word.replaceAt(charInWord, newChar);
     return newWord;
 
+}
+
+
+exports.isValidWord = function(word) {
+    var validWords = ["abc", "acc", "acb"];
+    for (var i = 0; i < validWords.length; ++i) {
+        if (validWords[i] === word) {
+            return true;
+        }
+    }
+
+    return false;
 }
