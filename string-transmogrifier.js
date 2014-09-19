@@ -46,7 +46,6 @@ exports.transmogrifyRecursive = function(currentWord, endWord, currentCharacterI
         throw "currentCharacterInAlphabet is out of bounds."
     }
 
-    processedMap[currentWord] = true;
 
     // otherwise generate new data
     for(var j = 0; j < currentWord.length; ++j) {
@@ -55,14 +54,16 @@ exports.transmogrifyRecursive = function(currentWord, endWord, currentCharacterI
 
             var validWord = exports.isValidWord(newWord);
 
+            
 
-            if (validWord && newWord != currentWord && !processedMap[newWord]) {
+            if (validWord && newWord != currentWord && !processedMap[newWord + currentWord]) {
                 var newCurrentCharacter = Number(currentCharacterInWord) + 1;
                 var tabstop = "";
                 for (var k = 0; k < newCurrentCharacter; ++k) {
                     tabstop = tabstop + "\t";
                 }
-                //console.log(tabstop + "Proceeding with " + newWord + " " + newCurrentCharacter);
+
+                processedMap[newWord + currentWord] = true;
                 var result = exports.transmogrifyRecursive(newWord, endWord, 0, 0);
                 if (result.code === 1) {
                     //console.log("Found word ="+ newWord + " " + result.word);
